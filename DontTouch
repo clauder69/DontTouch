@@ -1,0 +1,84 @@
+#define NEO_PIXELS 2
+#define servoPin   2  // WemosD1#TX1/D9     NodeMcu#D4/2  Esp12#I02/17
+#define chave     15  // WemosD1#D10/SS     NodeMcu#D8/15 Esp12#IO15/16
+#define NEO_PIN   13  // WemosD1#D1/MOSI/D7 NodeMcu#D7/13 Esp12#IO13/7
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel pixels(NEO_PIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
+#include <Servo.h>
+Servo servo;
+void vermelho() {
+  for (int i = 0; i < pixels.numPixels(); i++)
+    pixels.setPixelColor(i, pixels.Color(255, 0, 0));
+  pixels.show();
+}
+void preto() {
+  for (int i = 0; i < pixels.numPixels(); i++)
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+  pixels.show();
+}
+void azul() {
+  for (int i = 0; i < pixels.numPixels(); i++)
+    pixels.setPixelColor(i, pixels.Color(0, 255, 0));
+  pixels.show();
+}
+void cores(int d) {
+  d = d / 200;
+  for (int x = 0; x <= 255; x++) {
+    for (int i = 0; i < pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, pixels.Color(x, 0, 255 - x));
+      pixels.show();
+      delay(d);
+    }
+  }
+  pixels.clear();
+  pixels.show();
+}
+void setup() {
+  pixels.begin(); cores(0);
+  servo.attach(servoPin); servo.write(0);
+  pinMode(chave, INPUT_PULLUP);
+}
+int seq = 0;
+void loop() {
+  if (digitalRead(chave) == HIGH) {
+    if (++seq > 3) seq = 1;
+    delay(300);
+    if (seq == 1) {
+      for (int z = 0; z < 6; z++) {
+        servo.write(0);   vermelho(); delay(100);
+        servo.write(45);  preto();    delay(100);
+      }
+      servo.write(180);
+      delay(100);
+      cores(1000);
+      servo.write(0);
+    } else if (seq == 2) {
+      azul();
+      for (int servoAngle = 45; servoAngle < 180; servoAngle++) {
+        servo.write(servoAngle); delay(20);
+      }
+      vermelho();
+      for (int z = 0; z < 5; z++) {
+        servo.write(120); delay(100);
+        servo.write(180); delay(100);
+      }
+      preto();
+      for (int servoAngle = 180; servoAngle > 0; servoAngle--) {
+        servo.write(servoAngle); delay(5);
+      }
+      vermelho();
+      delay(500);
+      servo.write(90); azul(); delay(1000);
+      for (int servoAngle = 90; servoAngle > 0; servoAngle--) {
+        servo.write(servoAngle); delay(20);
+      }
+      preto();
+    } else if (seq == 3) {
+      vermelho(); servo.write(170); delay(500);
+      preto(); servo.write(0); delay(1000);
+      servo.write(180); delay(500); cores(1000);
+      servo.write(0);
+      preto();
+    }
+  }
+}
